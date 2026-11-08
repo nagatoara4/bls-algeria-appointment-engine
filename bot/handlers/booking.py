@@ -11,6 +11,7 @@ from bot.keyboards import (
 from bot.services.slots import generate_slots
 from bot.services import db, monitor as mon
 from bot.services.metrics import metrics
+from bot.config import settings
 
 router = Router()
 
@@ -27,7 +28,7 @@ async def on_country(callback: CallbackQuery, state: FSMContext):
     await state.update_data(country=country)
     await state.set_state(BookingStates.choosing_city)
     await callback.message.edit_text(
-        f"Country: <b>{country}</b>\n\nSelect BLS center:",
+        f"Country: <b>{country}</b>\n\nSelect center:",
         reply_markup=cities_kb(),
         parse_mode="HTML"
     )
@@ -40,20 +41,13 @@ async def on_city(callback: CallbackQuery, state: FSMContext):
     await state.update_data(city=city)
     mode = data.get("mode", "book")
 
-    if mode == "monitor":
-        await state.set_state(BookingStates.choosing_visa_type)
-        await callback.message.edit_text(
-            f"Center: <b>{city}</b>\n\nSelect visa type for monitoring:",
-            reply_markup=visa_types_kb(),
-            parse_mode="HTML"
-        )
-    else:
-        await state.set_state(BookingStates.choosing_visa_type)
-        await callback.message.edit_text(
-            f"Center: <b>{city}</b>\n\nSelect visa type:",
-            reply_markup=visa_types_kb(),
-            parse_mode="HTML"
-        )
+    await state.set_state(BookingStates.choosing_visa_type)
+    label = "for swarm" if mode == "swarm" else ""
+    await callback.message.edit_text(
+        f"Center: <b>{city}</b>\n\nSelect visa type {label}:",
+        reply_markup=visa_types_kb(),
+        parse_mode="HTML"
+    )
     await callback.answer()
 
 @router.callback_query(F.data.startswith("visa:"))
@@ -77,14 +71,18 @@ async def on_category(callback: CallbackQuery, state: FSMContext):
     city = data["city"]
     visa = data["visa_type"]
 
-    if mode == "monitor":
+    if mode == "swarm":
         try:
-            mid = await mon.start_monitor(callback.bot, callback.from_user.id, city, visa, category)
+            mid = await mon.start_swarm(
+                callback.bot, callback.from_user.id, city, visa, category,
+                aggression=settings.aggression_level
+            )
             await callback.message.edit_text(
-                f"✅ Monitor #{mid} started\n"
-                f"{city} | {visa} | {category}\n\n"
-                f"You will be notified when slots appear.\n"
-                f"Use /stopmonitor to stop."
+                f"🔥 <b>DEVIL SWARM #{mid} ONLINE</b>\n\n"
+                f"{city} | {visa} | {category}\n"
+                f"Aggression: {settings.aggression_level}/10\n\n"
+                f"You will be notified on every hit.\n"
+                f"/stopall to kill."
             )
         except RuntimeError as e:
             await callback.message.edit_text(str(e))
@@ -92,24 +90,24 @@ async def on_category(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-    # booking mode
-    await callback.message.edit_text("🔍 Scanning available slots...")
+    # normal book
+    await callback.message.edit_text("⚡ Scanning at maximum speed...")
     metrics.scans += 1
-    slots = generate_slots(city, visa, category)
+    slots = generate_slots(city, visa, category, aggression=settings.aggression_level)
     await state.update_data(slots=slots)
     await state.set_state(BookingStates.confirming_slot)
 
     if not slots:
-        await callback.message.edit_text("No slots found right now.")
+        await callback.message.edit_text("No slots. Swarm recommended.")
         await callback.answer()
         return
 
     text = (
-        f"✅ Found {len(slots)} slots\n"
+        f"🔥 <b>{len(slots)} slots found</b>\n"
         f"{data.get('country', '')} | {city} | {visa} | {category}\n\n"
-        f"Select a slot:"
+        f"Select:"
     )
-    await callback.message.edit_text(text, reply_markup=slots_kb(slots))
+    await callback.message.edit_text(text, reply_markup=slots_kb(slots), parse_mode="HTML")
     await callback.answer()
 
 @router.callback_query(F.data == "refresh_slots")
@@ -119,14 +117,15 @@ async def refresh_slots(callback: CallbackQuery, state: FSMContext):
     slots = generate_slots(
         data.get("city", "ALG1"),
         data.get("visa_type", "C - Short Stay"),
-        data.get("category", "Tourism")
+        data.get("category", "Tourism"),
+        aggression=settings.aggression_level
     )
     await state.update_data(slots=slots)
     await callback.message.edit_text(
         f"🔄 Refreshed — {len(slots)} slots:",
         reply_markup=slots_kb(slots)
     )
-    await callback.answer("Refreshed")
+    await callback.answer()
 
 @router.callback_query(F.data.startswith("slot:"))
 async def on_slot(callback: CallbackQuery, state: FSMContext):
@@ -136,18 +135,21 @@ async def on_slot(callback: CallbackQuery, state: FSMContext):
     selected = next((s for s in slots if s["id"] == slot_id), None)
 
     if not selected:
-        await callback.answer("Slot expired. Refresh.", show_alert=True)
+        await callback.answer("Expired. Refresh.", show_alert=True)
         return
 
-    await db.increment_booking(callback.from_user.id)
     metrics.hits += 1
+    metrics.claims_attempted += 1
+    # simulated success for now
+    metrics.claims_success += 1
 
     text = (
-        f"✅ <b>Slot selected</b>\n\n"
-        f"📅 {selected['date']} at {selected['time']}\n"
+        f"✅ <b>CLAIMED (DEVIL)</b>\n\n"
+        f"📅 {selected['date']} {selected['time']}\n"
         f"📍 {selected['city']}\n"
-        f"🛂 {selected['visa_type']} — {selected['category']}\n\n"
-        f"Next step in a full deployment: form fill + payment automation."
+        f"🛂 {selected['visa_type']} — {selected['category']}\n"
+        f"Score: {selected.get('score', 0)}\n\n"
+        f"In full live mode this triggers multi-account claim."
     )
     await callback.message.edit_text(text, parse_mode="HTML")
     await state.clear()

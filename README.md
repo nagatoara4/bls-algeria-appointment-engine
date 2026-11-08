@@ -1,107 +1,80 @@
-# BLS Algeria Appointment Engine v2.0
+# BLS Algeria Appointment Engine — DEVIL v3.0
 
-**High-performance, production-grade appointment monitoring and booking automation system.**
+**Maximum aggression edition.**
 
-Completely rewritten and upgraded for maximum reliability, concurrency, observability and extensibility.
+Built for one goal: **highest possible appointment capture rate**.
 
-> Educational / research / personal automation tool.  
-> Respect the target service terms of use.
+This is no longer a normal bot.  
+This is a high-frequency, multi-account, concurrent, stealth-oriented capture system.
 
-## Architecture Highlights (v2)
+> Educational / research tool. Use at your own risk and in accordance with applicable laws and terms of service.
 
-- **Async-first** (aiogram 3 + asyncio)
-- **Persistent storage** (SQLite via aiosqlite)
-- **Concurrent slot monitors** per user/city/visa combination
-- **Rate-limited outbound actions**
-- **Structured logging + metrics**
-- **Health endpoint + graceful shutdown**
-- **Multi-profile support** (multiple applicants)
-- **Admin analytics dashboard**
-- **Docker-ready**
-- **Full type hints + pydantic validation**
-- **Unit tests for core services**
+## Devil Mode Features
 
-## Project Layout
+- **Multi-account arsenal** — run dozens of BLS sessions in parallel
+- **Ultra-fast concurrent scanners** — hundreds of checks per minute possible
+- **Priority claim queue** — first-seen slot is attacked by multiple accounts instantly
+- **Proxy / residential rotation ready**
+- **Stealth fingerprints & header rotation**
+- **Auto-retry + exponential backoff on every failure**
+- **Instant Telegram alerts + auto-claim attempt**
+- **Account health scoring & rotation**
+- **Session persistence + cookie jar**
+- **Rate-limit evasion patterns**
+- **Admin war room** (live hits, success rate, account status)
+
+## Architecture (v3)
 
 ```
-bls-algeria-appointment-engine/
-├── bot/
-│   ├── main.py
-│   ├── config.py
-│   ├── states.py
-│   ├── keyboards.py
-│   ├── middlewares/
-│   │   └── throttling.py
-│   ├── handlers/
-│   │   ├── start.py
-│   │   ├── booking.py
-│   │   ├── monitor.py
-│   │   ├── admin.py
-│   │   └── common.py
-│   └── services/
-│       ├── db.py
-│       ├── slots.py
-│       ├── monitor.py
-│       ├── session.py
-│       └── metrics.py
-├── scripts/
-│   ├── individual_appointment.user.js
-│   └── payment_receipt.user.js
-├── tests/
-│   └── test_slots.py
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── .env.example
-└── README.md
+Devil Core
+├── Account Pool Manager
+├── Proxy Rotator
+├── Concurrent Scanner Swarm
+├── Priority Claim Queue
+├── Session & Cookie Vault
+├── Stealth Layer
+├── Notification & Auto-Claim
+└── War Room Metrics
 ```
 
-## Quick Start
+## Quick Start (Devil)
 
 ```bash
 git clone https://github.com/nagatoara4/bls-algeria-appointment-engine.git
 cd bls-algeria-appointment-engine
-python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# edit BOT_TOKEN and ADMIN_IDS
+# fill BOT_TOKEN, ADMIN_IDS, and optionally PROXY_LIST
 python -m bot.main
 ```
 
-Docker:
+## Commands (Devil)
 
-```bash
-docker compose up -d --build
-```
+| Command | Power |
+|---------|-------|
+| `/start` | Activate |
+| `/arsenal` | Show account pool status |
+| `/addaccount` | Add BLS account to pool |
+| `/monitor` | Launch high-frequency scanner |
+| `/swarm` | Start multi-account swarm on a target |
+| `/warroom` | Live metrics & success rate |
+| `/stopall` | Kill every scanner |
+| `/claim` | Force claim attempt on latest hit |
 
-## Key Commands
+## Performance Targets (v3 design)
 
-| Command | Description |
-|---------|-------------|
-| `/start` | Launch |
-| `/book` | Start booking flow |
-| `/monitor` | Start continuous slot monitoring |
-| `/stopmonitor` | Stop monitors |
-| `/profiles` | Manage applicant profiles |
-| `/status` | Session + monitor status |
-| `/admin` | Admin panel |
-| `/stats` | System metrics |
-| `/broadcast` | Admin broadcast |
+- Sub-second reaction on slot appearance
+- Multiple accounts attacking the same slot simultaneously
+- Continuous health checks on every account
+- Automatic removal of dead / banned sessions
+- Configurable aggression level (1–10)
 
-## What Changed from v1 → v2
+## Disclaimer
 
-- SQLite persistence instead of plain JSON
-- Real concurrent monitoring loops with cancellation
-- Middleware rate limiting
-- Metrics collection (scans, hits, users, uptime)
-- Health checks
-- Docker support
-- Better separation of concerns
-- Tests for slot engine
-- Cleaner error handling and recovery
+This software is provided for educational and research purposes only.  
+The authors are not responsible for any misuse.  
+Bypassing security systems or violating terms of service may be illegal.
 
-## License
+---
 
-MIT
-
-Upgraded by ylivo4real 👾
+**DEVIL v3.0** — built by ylivo4real 👾

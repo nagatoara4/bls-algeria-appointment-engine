@@ -1,5 +1,5 @@
 services:
-  engine:
+  devil:
     build: .
     env_file: .env
     volumes:

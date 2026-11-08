@@ -9,9 +9,8 @@ CATEGORIES_D = ["Study", "Work", "Family Reunion"]
 def main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🚀 Start Booking")],
-            [KeyboardButton(text="📡 Monitor"), KeyboardButton(text="📊 Status")],
-            [KeyboardButton(text="❌ Cancel")],
+            [KeyboardButton(text="🚀 Start Booking"), KeyboardButton(text="📡 Monitor")],
+            [KeyboardButton(text="📊 Status"), KeyboardButton(text="❌ Cancel")],
         ],
         resize_keyboard=True
     )
@@ -39,8 +38,10 @@ def categories_kb(visa_type: str) -> InlineKeyboardMarkup:
 
 def slots_kb(slots: list) -> InlineKeyboardMarkup:
     buttons = [
-        [InlineKeyboardButton(text=f"{s['date']} {s['time']} ★{s.get('score', 0)}", callback_data=f"slot:{s['id']}")]
-        for s in slots
+        [InlineKeyboardButton(
+            text=f"{s['date']} {s['time']} ★{s.get('score', 0)}",
+            callback_data=f"slot:{s['id']}"
+        )] for s in slots
     ]
     buttons.append([InlineKeyboardButton(text="🔄 Refresh", callback_data="refresh_slots")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
