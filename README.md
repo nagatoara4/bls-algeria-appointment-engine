@@ -1,80 +1,63 @@
-# BLS Algeria Appointment Engine — DEVIL v3.0
+# BLS Algeria Appointment Engine — DEVIL v3.1
 
-**Maximum aggression edition.**
+**Maximum aggression + Real Integration Layer.**
 
-Built for one goal: **highest possible appointment capture rate**.
+## Status
 
-This is no longer a normal bot.  
-This is a high-frequency, multi-account, concurrent, stealth-oriented capture system.
+| Layer | State |
+|-------|-------|
+| Telegram control plane | ✅ Production |
+| Concurrent swarms | ✅ Live |
+| Account arsenal + health | ✅ Live |
+| War room metrics | ✅ Live |
+| **Real BLS portal bridge** | ⚡ Skeleton ready |
+| Stealth browser | ⚡ Ready |
+| Multi-account claim | ⚡ Ready |
 
-> Educational / research tool. Use at your own risk and in accordance with applicable laws and terms of service.
+## Real Layer (`bot/services/real_bls.py`)
 
-## Devil Mode Features
+This is the critical module. It contains:
 
-- **Multi-account arsenal** — run dozens of BLS sessions in parallel
-- **Ultra-fast concurrent scanners** — hundreds of checks per minute possible
-- **Priority claim queue** — first-seen slot is attacked by multiple accounts instantly
-- **Proxy / residential rotation ready**
-- **Stealth fingerprints & header rotation**
-- **Auto-retry + exponential backoff on every failure**
-- **Instant Telegram alerts + auto-claim attempt**
-- **Account health scoring & rotation**
-- **Session persistence + cookie jar**
-- **Rate-limit evasion patterns**
-- **Admin war room** (live hits, success rate, account status)
+- `BLSAccount` + session/cookie vault
+- Stealth Playwright context factory
+- `login()` / `ensure_session()`
+- `fetch_available_slots()` — real date extraction point
+- `attempt_claim()` — full booking pipeline
+- `swarm_scan()` — parallel multi-account scanner
 
-## Architecture (v3)
+**To activate real mode:**
 
-```
-Devil Core
-├── Account Pool Manager
-├── Proxy Rotator
-├── Concurrent Scanner Swarm
-├── Priority Claim Queue
-├── Session & Cookie Vault
-├── Stealth Layer
-├── Notification & Auto-Claim
-└── War Room Metrics
-```
+1. `pip install playwright && playwright install chromium`
+2. Open `bot/services/monitor.py`
+3. Set `USE_REAL = True`
+4. Fill the TODO sections in `real_bls.py` with current selectors / endpoints
+5. Add accounts via DB or future `/addaccount` command
+6. Run with proxies if needed
 
-## Quick Start (Devil)
+## Why this is the strongest version
 
-```bash
-git clone https://github.com/nagatoara4/bls-algeria-appointment-engine.git
-cd bls-algeria-appointment-engine
-pip install -r requirements.txt
-cp .env.example .env
-# fill BOT_TOKEN, ADMIN_IDS, and optionally PROXY_LIST
-python -m bot.main
-```
+- The swarm engine already supports dozens of parallel scanners
+- Account health rotation is implemented
+- Claim pipeline is structured for multi-account race
+- Stealth headers + anti-detect hooks are prepared
+- Everything is async and cancellation-safe
 
-## Commands (Devil)
+The only remaining work is mapping the live BLS Algeria DOM / XHR to the functions already defined.
 
-| Command | Power |
-|---------|-------|
-| `/start` | Activate |
-| `/arsenal` | Show account pool status |
-| `/addaccount` | Add BLS account to pool |
-| `/monitor` | Launch high-frequency scanner |
-| `/swarm` | Start multi-account swarm on a target |
-| `/warroom` | Live metrics & success rate |
-| `/stopall` | Kill every scanner |
-| `/claim` | Force claim attempt on latest hit |
+## Commands
 
-## Performance Targets (v3 design)
-
-- Sub-second reaction on slot appearance
-- Multiple accounts attacking the same slot simultaneously
-- Continuous health checks on every account
-- Automatic removal of dead / banned sessions
-- Configurable aggression level (1–10)
+- `/swarm` — launch devil scanner
+- `/stopall` — kill all
+- `/warroom` — live stats
+- `/arsenal` — account pool
+- `/book` — manual flow
 
 ## Disclaimer
 
-This software is provided for educational and research purposes only.  
-The authors are not responsible for any misuse.  
-Bypassing security systems or violating terms of service may be illegal.
+Educational / research only.  
+Respect laws and terms of service.  
+Authors accept no liability.
 
 ---
 
-**DEVIL v3.0** — built by ylivo4real 👾
+**DEVIL v3.1** — ylivo4real 👾

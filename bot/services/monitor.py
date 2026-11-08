@@ -1,24 +1,53 @@
 """
-DEVIL Swarm Monitor
-High-frequency concurrent scanners with account pool support.
+DEVIL Swarm Monitor v3.1
+Now with real integration hook.
 """
 import asyncio
 import logging
 from typing import Dict, List, Tuple
 from bot.services import db
 from bot.services.slots import generate_slots
+from bot.services.real_bls import BLSAccount, swarm_scan, Slot
 from bot.config import settings
 
 logger = logging.getLogger(__name__)
 
 _tasks: Dict[int, List[Tuple[int, asyncio.Task]]] = {}
 
+# Toggle: False = simulated slots, True = call real layer
+USE_REAL = False
+
 async def _swarm_loop(bot, user_id: int, monitor_id: int, city: str, visa_type: str, category: str, aggression: int):
-    logger.info("DEVIL swarm %s live | user=%s | %s %s %s | agg=%s", monitor_id, user_id, city, visa_type, category, aggression)
+    logger.info("DEVIL swarm %s live | user=%s | %s %s %s | agg=%s | real=%s",
+                monitor_id, user_id, city, visa_type, category, aggression, USE_REAL)
     interval = max(3, settings.scan_interval_sec - (aggression // 2))
     try:
         while True:
-            slots = generate_slots(city, visa_type, category, count=4 + aggression // 3, aggression=aggression)
+            slots = []
+            if USE_REAL:
+                # Load healthy accounts from DB and convert
+                raw_accounts = await db.get_healthy_accounts(limit=8)
+                accounts = [
+                    BLSAccount(email=a["email"], password=a["password"], health=a["health"])
+                    for a in raw_accounts
+                ]
+                real_slots = await swarm_scan(accounts, city, visa_type, category)
+                slots = [
+                    {
+                        "id": f"real-{s.date}-{s.time}",
+                        "date": s.date,
+                        "time": s.time,
+                        "city": s.center,
+                        "visa_type": s.visa_type,
+                        "category": s.category,
+                        "score": 95,
+                        "priority": 95
+                    }
+                    for s in real_slots
+                ]
+            else:
+                slots = generate_slots(city, visa_type, category, count=4 + aggression // 3, aggression=aggression)
+
             if slots:
                 best = slots[0]
                 await db.log_hit(city, visa_type, category, best["date"], best["time"])
@@ -26,10 +55,10 @@ async def _swarm_loop(bot, user_id: int, monitor_id: int, city: str, visa_type: 
                     f"🔥 <b>DEVIL HIT</b>\n\n"
                     f"Center: <b>{city}</b>\n"
                     f"Visa: {visa_type} — {category}\n"
-                    f"Best slot: <b>{best['date']} {best['time']}</b> (score {best['score']})\n\n"
-                    f"Total found: {len(slots)}\n"
-                    f"Aggression: {aggression}/10\n\n"
-                    f"React now. /claim or start booking."
+                    f"Best: <b>{best['date']} {best['time']}</b>\n"
+                    f"Found: {len(slots)}\n"
+                    f"Mode: {'REAL' if USE_REAL else 'SIM'}\n\n"
+                    f"React. /claim or book."
                 )
                 try:
                     await bot.send_message(user_id, text, parse_mode="HTML")
