@@ -1,22 +1,6 @@
 """
-REAL BLS Algeria Integration Layer (v3.1)
-
-This module is the production bridge between the Devil swarm engine
-and the actual BLS Algeria portal.
-
-Current state:
-- Full session & cookie management
-- Stealth browser configuration ready
-- Slot extraction skeleton (available_dates pattern)
-- Claim pipeline skeleton
-- Captcha / Turnstile hook points
-- Multi-account support
-
-To go fully live:
-1. Install playwright or undetected-chromedriver
-2. Implement the marked TODO sections with current portal selectors
-3. Add your 2captcha / anti-captcha key if needed
-4. Test with one account first
+REAL BLS Algeria Integration Layer — v3.2
+Complete end-to-end claim pipeline skeleton.
 """
 
 from __future__ import annotations
@@ -28,12 +12,7 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-BLS_BASE = "https://algeria.blsinternational.com"  # verify current domain
-# Alternative historical domains: algeria.blsspainvisa.com, etc.
+BLS_BASE = "https://algeria.blsinternational.com"
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
@@ -59,22 +38,27 @@ class Slot:
     category: str
     raw: Dict[str, Any] = field(default_factory=dict)
 
+@dataclass
+class ApplicantProfile:
+    first_name: str
+    last_name: str
+    birth: str          # YYYY-MM-DD
+    passport: str
+    issue_date: str     # YYYY-MM-DD
+    expiry_date: str    # YYYY-MM-DD
+    issue_place: str
+
 # ---------------------------------------------------------------------------
-# Stealth / Browser helpers (Playwright style)
+# Stealth browser
 # ---------------------------------------------------------------------------
 
 async def create_stealth_context(playwright, proxy: Optional[str] = None):
-    """
-    Create a hardened browser context.
-    Requires: pip install playwright && playwright install chromium
-    """
     browser = await playwright.chromium.launch(
         headless=True,
         args=[
             "--disable-blink-features=AutomationControlled",
             "--no-sandbox",
             "--disable-dev-shm-usage",
-            "--disable-web-security",
         ]
     )
     context_args = {
@@ -87,8 +71,6 @@ async def create_stealth_context(playwright, proxy: Optional[str] = None):
         context_args["proxy"] = {"server": proxy}
 
     context = await browser.new_context(**context_args)
-
-    # Stealth scripts
     await context.add_init_script("""
         Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
         window.chrome = { runtime: {} };
@@ -98,23 +80,27 @@ async def create_stealth_context(playwright, proxy: Optional[str] = None):
     return browser, context
 
 # ---------------------------------------------------------------------------
-# Session management
+# Session
 # ---------------------------------------------------------------------------
 
 async def login(account: BLSAccount) -> bool:
     """
-    Perform login and store cookies.
-    TODO: implement real form fill + OTP / captcha handling.
+    Real login flow — implement selectors here.
+    Returns True on success and populates account.cookies
     """
-    logger.info("Login attempt for %s", account.email)
-    # Placeholder — replace with real Playwright/Selenium flow
-    # 1. Navigate to login page
-    # 2. Fill email / password
-    # 3. Solve captcha if present
-    # 4. Submit
-    # 5. Extract cookies
-    account.health = max(0, account.health - 5)
-    return False  # return True when real login succeeds
+    logger.info("Login attempt → %s", account.email)
+    # ---------------------------------------------------------------
+    # TODO: Real implementation with Playwright
+    # page = await context.new_page()
+    # await page.goto(f"{BLS_BASE}/...")
+    # await page.fill("#email", account.email)
+    # await page.fill("#password", account.password)
+    # solve captcha if present
+    # await page.click("button[type=submit]")
+    # account.cookies = await context.cookies()
+    # ---------------------------------------------------------------
+    account.health = max(0, account.health - 3)
+    return False
 
 async def ensure_session(account: BLSAccount) -> bool:
     if account.cookies and account.health > 40:
@@ -131,59 +117,66 @@ async def fetch_available_slots(
     visa_type: str,
     category: str
 ) -> List[Slot]:
-    """
-    Real slot fetcher.
-    Historical pattern on many BLS sites:
-        available_dates = ["dd-mm-yyyy", ...]
-        fullCapicity_dates = [...]
-    """
     if not await ensure_session(account):
-        logger.warning("No valid session for %s", account.email)
         return []
 
-    # TODO: real implementation
-    # page = await context.new_page()
-    # await page.goto(f"{BLS_BASE}/...")
-    # content = await page.content()
-    # parse available_dates from script tags or XHR responses
-
-    logger.debug("fetch_available_slots called for %s %s %s", center, visa_type, category)
-    return []  # real slots go here
+    # ---------------------------------------------------------------
+    # TODO: Real extraction
+    # Classic BLS pattern found in many portals:
+    #   available_dates = ["dd-mm-yyyy", ...]
+    #   fullCapicity_dates = [...]
+    # Parse from page source or intercept XHR
+    # ---------------------------------------------------------------
+    logger.debug("Real slot fetch for %s | %s | %s", center, visa_type, category)
+    return []
 
 # ---------------------------------------------------------------------------
-# Claim pipeline
+# Claim pipeline — this is where your personal info is used
 # ---------------------------------------------------------------------------
 
 async def attempt_claim(
     account: BLSAccount,
     slot: Slot,
-    profile: Dict[str, str]
+    profile: ApplicantProfile
 ) -> Dict[str, Any]:
     """
-    Full claim attempt:
-    1. Select date/time
-    2. Fill applicant data
-    3. Submit
-    4. Handle payment redirect if needed
+    Full end-to-end claim using the applicant profile you provided.
     """
-    logger.info("Claim attempt %s %s with account %s", slot.date, slot.time, account.email)
+    logger.info(
+        "CLAIM → %s %s | account=%s | name=%s %s",
+        slot.date, slot.time, account.email,
+        profile.first_name, profile.last_name
+    )
 
-    # TODO: real claim flow
-    # - Navigate to booking page with session
-    # - Set date picker
-    # - Fill first_name, last_name, passport, etc.
-    # - Click submit
-    # - Capture success / payment link
+    if not await ensure_session(account):
+        return {"success": False, "message": "Session dead"}
+
+    # ---------------------------------------------------------------
+    # TODO: Real claim steps
+    # 1. Navigate to appointment page with valid session
+    # 2. Set date: $('#app_date').datepicker("update", slot.date)
+    # 3. Select time
+    # 4. Fill fields:
+    #       first_name  ← profile.first_name
+    #       last_name   ← profile.last_name
+    #       dateOfBirth ← profile.birth
+    #       passport_no ← profile.passport
+    #       pptIssueDate, pptExpiryDate, pptIssuePalace
+    # 5. Submit form
+    # 6. Handle payment page / confirmation
+    # 7. Return success + confirmation number or payment link
+    # ---------------------------------------------------------------
 
     return {
         "success": False,
-        "message": "Real claim not yet wired — skeleton only",
+        "message": "Real claim skeleton — wire selectors to activate",
         "account": account.email,
-        "slot": f"{slot.date} {slot.time}"
+        "slot": f"{slot.date} {slot.time}",
+        "applicant": f"{profile.first_name} {profile.last_name}"
     }
 
 # ---------------------------------------------------------------------------
-# High-level swarm interface (used by monitor.py)
+# Parallel swarm scan
 # ---------------------------------------------------------------------------
 
 async def swarm_scan(
@@ -191,12 +184,8 @@ async def swarm_scan(
     center: str,
     visa_type: str,
     category: str,
-    max_accounts: int = 5
+    max_accounts: int = 6
 ) -> List[Slot]:
-    """
-    Run parallel scans across healthy accounts.
-    Returns merged unique slots.
-    """
     healthy = [a for a in accounts if a.health > 30][:max_accounts]
     if not healthy:
         return []
