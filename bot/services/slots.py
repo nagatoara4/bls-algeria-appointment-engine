@@ -1,28 +1,26 @@
 """
-Slot generation / monitoring service.
-In production you replace the generator with real portal polling
-(httpx + browser automation or reverse-engineered endpoints).
+High-quality slot generation / placeholder for real portal polling.
+In production replace generate_slots with real HTTP/browser logic.
 """
 from datetime import datetime, timedelta
 import random
 from typing import List, Dict
 import uuid
 
-def generate_slots(city: str, visa_type: str, category: str, count: int = 4) -> List[Dict]:
-    """Generate realistic future weekday slots for demo / testing."""
+def generate_slots(city: str, visa_type: str, category: str, count: int = 5) -> List[Dict]:
     slots = []
     base = datetime.now() + timedelta(days=1)
-    used_dates = set()
+    used = set()
 
     while len(slots) < count:
-        offset = random.randint(1, 60)
+        offset = random.randint(1, 75)
         day = base + timedelta(days=offset)
-        if day.weekday() >= 5:  # skip weekend
+        if day.weekday() >= 5:
             continue
         date_str = day.strftime("%Y-%m-%d")
-        if date_str in used_dates:
+        if date_str in used:
             continue
-        used_dates.add(date_str)
+        used.add(date_str)
         hour = random.choice([8, 9, 10, 11, 13, 14, 15])
         minute = random.choice([0, 15, 30, 45])
         slots.append({
@@ -32,7 +30,8 @@ def generate_slots(city: str, visa_type: str, category: str, count: int = 4) -> 
             "city": city,
             "visa_type": visa_type,
             "category": category,
-            "center": city
+            "center": city,
+            "score": random.randint(60, 99)
         })
 
     slots.sort(key=lambda x: (x["date"], x["time"]))

@@ -5,4 +5,4 @@ router = Router()
 
 @router.message()
 async def fallback(message: Message):
-    await message.answer("Use the menu buttons or /start")
+    await message.answer("Use /start or the menu buttons.")

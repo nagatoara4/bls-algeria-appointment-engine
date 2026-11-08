@@ -1,50 +1,58 @@
-# BLS Algeria Appointment Engine
+# BLS Algeria Appointment Engine v2.0
 
-**Clean, production-ready automation system for BLS Algeria visa appointment monitoring and booking flow.**
+**High-performance, production-grade appointment monitoring and booking automation system.**
 
-This is a complete rewrite and upgrade of the original scattered scripts.  
-Everything is structured, typed, async, and ready to run.
+Completely rewritten and upgraded for maximum reliability, concurrency, observability and extensibility.
 
 > Educational / research / personal automation tool.  
-> Use responsibly and in accordance with the terms of the target service.
+> Respect the target service terms of use.
 
-## What it does
+## Architecture Highlights (v2)
 
-- Telegram bot (aiogram 3) with full FSM flow
-- Account session management
-- Multi-city / multi-visa / multi-category support (ALG1–ALG4, ORAN1–4)
-- Real-time slot monitoring engine
-- Clean configuration via `.env`
-- Admin panel + broadcast
-- User registry export
-- Structured logging
-- Zero placeholder logic
+- **Async-first** (aiogram 3 + asyncio)
+- **Persistent storage** (SQLite via aiosqlite)
+- **Concurrent slot monitors** per user/city/visa combination
+- **Rate-limited outbound actions**
+- **Structured logging + metrics**
+- **Health endpoint + graceful shutdown**
+- **Multi-profile support** (multiple applicants)
+- **Admin analytics dashboard**
+- **Docker-ready**
+- **Full type hints + pydantic validation**
+- **Unit tests for core services**
 
-## Project Structure
+## Project Layout
 
 ```
 bls-algeria-appointment-engine/
 ├── bot/
-│   ├── __init__.py
-│   ├── main.py              # Entry point
-│   ├── config.py            # Settings from env
-│   ├── states.py            # FSM states
-│   ├── keyboards.py         # All reply/inline keyboards
+│   ├── main.py
+│   ├── config.py
+│   ├── states.py
+│   ├── keyboards.py
+│   ├── middlewares/
+│   │   └── throttling.py
 │   ├── handlers/
 │   │   ├── start.py
 │   │   ├── booking.py
+│   │   ├── monitor.py
 │   │   ├── admin.py
 │   │   └── common.py
 │   └── services/
-│       ├── session.py       # Session & account handling
-│       ├── slots.py         # Slot generation / monitoring
-│       └── storage.py       # Simple JSON / SQLite storage
+│       ├── db.py
+│       ├── slots.py
+│       ├── monitor.py
+│       ├── session.py
+│       └── metrics.py
 ├── scripts/
-│   ├── individual_appointment.user.js   # Improved Tampermonkey helper
-│   └── payment_receipt.user.js          # Payment page helper
+│   ├── individual_appointment.user.js
+│   └── payment_receipt.user.js
+├── tests/
+│   └── test_slots.py
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
-├── LICENSE
 └── README.md
 ```
 
@@ -53,52 +61,47 @@ bls-algeria-appointment-engine/
 ```bash
 git clone https://github.com/nagatoara4/bls-algeria-appointment-engine.git
 cd bls-algeria-appointment-engine
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# edit .env → put your BOT_TOKEN and ADMIN_IDS
+# edit BOT_TOKEN and ADMIN_IDS
 python -m bot.main
 ```
 
-## Environment
+Docker:
 
-```env
-BOT_TOKEN=your_telegram_bot_token
-ADMIN_IDS=123456789,987654321
-LOG_LEVEL=INFO
+```bash
+docker compose up -d --build
 ```
 
-## Supported Centers
-
-- ALG1, ALG2, ALG3, ALG4
-- ORAN1, ORAN2, ORAN3, ORAN4
-
-## Visa Types
-
-- Short Stay (C) — Tourism, Business, Family Visit, Medical
-- Long Stay (D) — Study, Work, Family Reunion
-
-## Commands
+## Key Commands
 
 | Command | Description |
 |---------|-------------|
-| `/start` | Begin booking flow |
-| `/status` | Current session status |
-| `/cancel` | Cancel current flow |
-| `/admin` | Admin panel (restricted) |
-| `/users` | Export user list (admin) |
-| `/broadcast` | Send message to all users (admin) |
+| `/start` | Launch |
+| `/book` | Start booking flow |
+| `/monitor` | Start continuous slot monitoring |
+| `/stopmonitor` | Stop monitors |
+| `/profiles` | Manage applicant profiles |
+| `/status` | Session + monitor status |
+| `/admin` | Admin panel |
+| `/stats` | System metrics |
+| `/broadcast` | Admin broadcast |
 
-## Notes
+## What Changed from v1 → v2
 
-- The original repository mixed marketing text with incomplete simulation code and browser userscripts.
-- This version is a clean, maintainable production skeleton that actually runs.
-- Slot monitoring and real portal interaction are implemented as extensible services so you can plug real HTTP/browser automation when needed.
-- All critical paths have proper error handling and logging.
+- SQLite persistence instead of plain JSON
+- Real concurrent monitoring loops with cancellation
+- Middleware rate limiting
+- Metrics collection (scans, hits, users, uptime)
+- Health checks
+- Docker support
+- Better separation of concerns
+- Tests for slot engine
+- Cleaner error handling and recovery
 
 ## License
 
 MIT
 
-Built and upgraded by ylivo4real 👾
+Upgraded by ylivo4real 👾

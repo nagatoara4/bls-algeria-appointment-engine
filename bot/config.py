@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     bot_token: str
     admin_ids: str = ""
     log_level: str = "INFO"
+    db_path: str = "data/engine.db"
+    max_monitors_per_user: int = 3
+    scan_interval_sec: int = 45
 
     @property
     def admin_id_list(self) -> List[int]:

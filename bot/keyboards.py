@@ -10,34 +10,37 @@ def main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🚀 Start Booking")],
-            [KeyboardButton(text="📊 Status"), KeyboardButton(text="❌ Cancel")],
+            [KeyboardButton(text="📡 Monitor"), KeyboardButton(text="📊 Status")],
+            [KeyboardButton(text="❌ Cancel")],
         ],
         resize_keyboard=True
     )
 
 def countries_kb() -> InlineKeyboardMarkup:
-    buttons = [[InlineKeyboardButton(text=c, callback_data=f"country:{c}")] for c in COUNTRIES]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=c, callback_data=f"country:{c}")] for c in COUNTRIES
+    ])
 
 def cities_kb() -> InlineKeyboardMarkup:
-    buttons = [[InlineKeyboardButton(text=c, callback_data=f"city:{c}")] for c in CITIES]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=c, callback_data=f"city:{c}")] for c in CITIES
+    ])
 
 def visa_types_kb() -> InlineKeyboardMarkup:
-    buttons = [[InlineKeyboardButton(text=v, callback_data=f"visa:{v}")] for v in VISA_TYPES]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=v, callback_data=f"visa:{v}")] for v in VISA_TYPES
+    ])
 
 def categories_kb(visa_type: str) -> InlineKeyboardMarkup:
     cats = CATEGORIES_C if visa_type.startswith("C") else CATEGORIES_D
-    buttons = [[InlineKeyboardButton(text=c, callback_data=f"cat:{c}")] for c in cats]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=c, callback_data=f"cat:{c}")] for c in cats
+    ])
 
 def slots_kb(slots: list) -> InlineKeyboardMarkup:
-    buttons = []
-    for s in slots:
-        buttons.append([InlineKeyboardButton(
-            text=f"{s['date']} {s['time']}",
-            callback_data=f"slot:{s['id']}"
-        )])
+    buttons = [
+        [InlineKeyboardButton(text=f"{s['date']} {s['time']} ★{s.get('score', 0)}", callback_data=f"slot:{s['id']}")]
+        for s in slots
+    ]
     buttons.append([InlineKeyboardButton(text="🔄 Refresh", callback_data="refresh_slots")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

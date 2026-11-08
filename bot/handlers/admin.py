@@ -1,26 +1,38 @@
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 
 from bot.config import settings
-from bot.services.storage import get_all_users, get_user_count
+from bot.services import db
+from bot.services.metrics import metrics
 
 router = Router()
 
-def is_admin(user_id: int) -> bool:
-    return user_id in settings.admin_id_list
+def is_admin(uid: int) -> bool:
+    return uid in settings.admin_id_list
 
 @router.message(Command("admin"))
 async def cmd_admin(message: Message):
     if not is_admin(message.from_user.id):
         return
-    count = get_user_count()
+    count = await db.get_user_count()
     await message.answer(
-        f"🔧 <b>Admin Panel</b>\n\n"
-        f"Users registered: {count}\n"
-        f"Commands:\n"
-        f"/users — export user list\n"
-        f"/broadcast <text> — send to all",
+        f"🔧 <b>Admin</b>\n\nUsers: {count}\n"
+        f"/stats — metrics\n/users — list\n/broadcast <text>",
+        parse_mode="HTML"
+    )
+
+@router.message(Command("stats"))
+async def cmd_stats(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+    up = int(metrics.uptime())
+    await message.answer(
+        f"📊 <b>Metrics</b>\n\n"
+        f"Uptime: {up // 3600}h {(up % 3600) // 60}m\n"
+        f"Scans: {metrics.scans}\n"
+        f"Hits: {metrics.hits}\n"
+        f"Users: {await db.get_user_count()}",
         parse_mode="HTML"
     )
 
@@ -28,13 +40,12 @@ async def cmd_admin(message: Message):
 async def cmd_users(message: Message):
     if not is_admin(message.from_user.id):
         return
-    users = get_all_users()
+    users = await db.get_all_users()
     if not users:
-        await message.answer("No users yet.")
+        await message.answer("No users.")
         return
-    lines = [f"{u['id']} | @{u.get('username') or '-'} | bookings={u.get('bookings', 0)}" for u in users]
-    text = "ID | Username | Bookings\n" + "\n".join(lines[:100])
-    await message.answer(f"<pre>{text}</pre>", parse_mode="HTML")
+    lines = [f"{u['id']} | @{u.get('username') or '-'} | {u.get('bookings', 0)}" for u in users[:80]]
+    await message.answer("<pre>" + "\n".join(lines) + "</pre>", parse_mode="HTML")
 
 @router.message(Command("broadcast"))
 async def cmd_broadcast(message: Message):
@@ -42,10 +53,10 @@ async def cmd_broadcast(message: Message):
         return
     parts = message.text.split(maxsplit=1)
     if len(parts) < 2:
-        await message.answer("Usage: /broadcast your message here")
+        await message.answer("Usage: /broadcast text")
         return
     text = parts[1]
-    users = get_all_users()
+    users = await db.get_all_users()
     sent = 0
     for u in users:
         try:
@@ -53,4 +64,4 @@ async def cmd_broadcast(message: Message):
             sent += 1
         except Exception:
             pass
-    await message.answer(f"Broadcast sent to {sent} users.")
+    await message.answer(f"Sent to {sent} users.")
